@@ -21,7 +21,7 @@
         /* A4 Page Styling for the PDF Preview */
         .a4-page {
             width: 210mm;
-            height: 295mm;
+            height: 295mm; 
             max-height: 295mm;
             box-sizing: border-box; 
             background: white;
@@ -93,17 +93,17 @@
     <div class="w-1/3 bg-white p-6 shadow-lg flex flex-col h-full overflow-y-auto z-10 border-r border-slate-200">
         <h2 class="text-2xl font-bold text-slate-800 mb-6">Letter Generator</h2>
         
-        <form id="data-form" class="space-y-4 flex-1">
+        <form id="data-form" class="space-y-4 flex-1" onsubmit="event.preventDefault();">
             
             <!-- Auto-Generating Series Control linked to Supabase -->
             <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mb-2 relative">
                 <div id="sync-status" class="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Sync
+                    <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-300"></span> <span id="sync-text">Checking Cloud...</span>
                 </div>
-                <label class="block text-xs font-bold text-indigo-800 mb-1 uppercase tracking-wide">Cert. Series Number (Auto-Syncs)</label>
+                <label class="block text-xs font-bold text-indigo-800 mb-1 uppercase tracking-wide">Cert. Series Number</label>
                 <div class="flex items-center gap-2">
                     <span class="text-sm font-bold text-slate-500">JKIL/MML-07A-CA48/P&M/</span>
-                    <input type="number" id="inp-series" class="w-20 border border-slate-300 rounded-lg p-1.5 font-bold text-center" min="1" onchange="updateSeriesManual()">
+                    <input type="number" id="inp-series" class="w-20 border border-slate-300 rounded-lg p-1.5 font-bold text-center" min="1" oninput="updateSeriesManual()">
                 </div>
             </div>
 
@@ -144,7 +144,7 @@
         </form>
 
         <div class="mt-6 space-y-3 pt-6 border-t border-slate-200">
-            <button onclick="generatePDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors">
+            <button id="pdf-btn" onclick="generatePDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors">
                 1. Generate & Save PDF
             </button>
             <button onclick="exportExcel()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2">
@@ -232,7 +232,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <div>
                             <div style="margin-bottom: 25px;">SIGNATURE</div>
-                            <div style="margin-bottom: 15px;">________________</div>
+                            <div style="margin-bottom: 15px;">__________________</div>
                             <div>P&M HEAD</div>
                         </div>
                         <div>
@@ -248,42 +248,64 @@
     </div>
 
     <script>
-        // --- SUPABASE CLOUD SETUP ---
-        const SUPABASE_URL = 'https://lyeezqunskbluichzljx.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZWV6cXVuc2tibHVpY2h6bGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzY0NTAsImV4cCI6MjEwNjYxMjQ1MH0.1zyQs2R0C6XYOWoQORp8fBeyOPtCrhEl5kuy6jmeWiU'; 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+        // --- SAFE INITIALIZATION ---
+        let supabaseClient = null;
         let savedRecords = [];
-        let competencyCounter = 1;
+        let competencyCounter = parseInt(localStorage.getItem('competency_counter')) || 1;
 
-        // Fetch the global latest number from the cloud database
+        // Try to connect to Supabase, but don't crash if it fails
+        try {
+            const SUPABASE_URL = 'https://lyeezqunskbluichzljx.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZWV6cXVuc2tibHVpY2h6bGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzY0NTAsImV4cCI6MjEwNjYxMjQ1MH0.1zyQs2R0C6XYOWoQORp8fBeyOPtCrhEl5kuy6jmeWiU'; 
+            if(window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch (e) {
+            console.warn("Cloud skipped. Working offline.");
+        }
+
+        function setSyncStatus(isOnline) {
+            const dot = document.getElementById('sync-dot');
+            const text = document.getElementById('sync-text');
+            if(isOnline) {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                text.innerText = "Cloud Sync Active";
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-amber-500";
+                text.innerText = "Offline Mode";
+            }
+        }
+
         async function fetchLatestSeriesNumber() {
+            if (!supabaseClient) return setSyncStatus(false);
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('series_tracker')
                     .select('current_number')
                     .eq('id', 1)
                     .single();
                 
-                if (data) {
-                    competencyCounter = data.current_number;
+                if (data && data.current_number) {
+                    competencyCounter = parseInt(data.current_number);
                     document.getElementById('inp-series').value = competencyCounter;
+                    localStorage.setItem('competency_counter', competencyCounter);
+                    setSyncStatus(true);
                     updatePreview();
                 }
             } catch (error) {
-                console.error("Cloud fetch failed:", error);
+                setSyncStatus(false);
             }
         }
 
-        // Save the new number to the cloud database
         async function saveSeriesToCloud(newNumber) {
+            if (!supabaseClient) return;
             try {
-                await supabase
+                await supabaseClient
                     .from('series_tracker')
                     .update({ current_number: newNumber })
                     .eq('id', 1);
             } catch (error) {
-                console.error("Cloud save failed:", error);
+                console.error("Save failed", error);
             }
         }
 
@@ -308,92 +330,130 @@
             if(isNaN(newVal) || newVal < 1) newVal = 1;
             competencyCounter = newVal;
             
-            saveSeriesToCloud(competencyCounter); // Sync manual change to cloud
+            localStorage.setItem('competency_counter', competencyCounter);
+            saveSeriesToCloud(competencyCounter); 
             updatePreview();
         }
 
         function updatePreview() {
-            const name = document.getElementById('inp-name').value.toUpperCase() || "__________________";
-            const equip = document.getElementById('inp-equip').value.toUpperCase() || "__________________";
-            const company = document.getElementById('inp-company').value.toUpperCase() || "__________________";
-            const dl = document.getElementById('inp-dl').value.toUpperCase() || "__________________";
-            const aadhar = document.getElementById('inp-aadhar').value || "__________________";
-            const mobile = document.getElementById('inp-mobile').value || "__________________";
-            const issueDateRaw = document.getElementById('inp-issue-date').value;
-            
-            const issueDate = formatDate(issueDateRaw);
-            const dueDate = calculateDueDate(issueDateRaw);
+            try {
+                const name = document.getElementById('inp-name').value.toUpperCase() || "__________________";
+                const equip = document.getElementById('inp-equip').value.toUpperCase() || "__________________";
+                const company = document.getElementById('inp-company').value.toUpperCase() || "__________________";
+                const dl = document.getElementById('inp-dl').value.toUpperCase() || "__________________";
+                const aadhar = document.getElementById('inp-aadhar').value || "__________________";
+                const mobile = document.getElementById('inp-mobile').value || "__________________";
+                const issueDateRaw = document.getElementById('inp-issue-date').value;
+                
+                const issueDate = formatDate(issueDateRaw);
+                const dueDate = calculateDueDate(issueDateRaw);
 
-            const formattedCounter = String(competencyCounter).padStart(3, '0');
-            const currentCertNo = `JKIL/MML-07A-CA48/P&M/${formattedCounter}`;
+                const formattedCounter = String(competencyCounter).padStart(3, '0');
+                const currentCertNo = `JKIL/MML-07A-CA48/P&M/${formattedCounter}`;
 
-            document.getElementById('out-name').innerText = name;
-            document.getElementById('out-name-inline').innerText = name;
-            document.getElementById('out-equip-top').innerText = equip;
-            document.getElementById('out-equip-bottom').innerText = equip;
-            document.getElementById('out-equip-inline').innerText = equip;
-            document.getElementById('out-company').innerText = company;
-            document.getElementById('out-dl').innerText = dl;
-            document.getElementById('out-aadhar').innerText = aadhar;
-            document.getElementById('out-mobile').innerText = mobile;
-            document.getElementById('out-issue').innerText = issueDate;
-            document.getElementById('out-due').innerText = dueDate;
-            document.getElementById('out-cert').innerText = currentCertNo;
+                document.getElementById('out-name').innerText = name;
+                document.getElementById('out-name-inline').innerText = name;
+                document.getElementById('out-equip-top').innerText = equip;
+                document.getElementById('out-equip-bottom').innerText = equip;
+                document.getElementById('out-equip-inline').innerText = equip;
+                document.getElementById('out-company').innerText = company;
+                document.getElementById('out-dl').innerText = dl;
+                document.getElementById('out-aadhar').innerText = aadhar;
+                document.getElementById('out-mobile').innerText = mobile;
+                document.getElementById('out-issue').innerText = issueDate;
+                document.getElementById('out-due').innerText = dueDate;
+                document.getElementById('out-cert').innerText = currentCertNo;
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         function generatePDF() {
             const name = document.getElementById('inp-name').value;
-            if(!name) return alert("Please enter at least the Operator Name.");
+            if(!name) {
+                alert("Please enter at least the Operator Name.");
+                return;
+            }
+
+            // Visual Loading State
+            const btn = document.getElementById('pdf-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ Generating PDF...";
+            btn.disabled = true;
 
             const element = document.getElementById('pdf-content');
             const opt = {
                 margin:       0,
                 filename:     `Auth_Letter_${name.replace(/ /g, '_')}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+                html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            html2pdf().set(opt).from(element).save().then(() => {
-                savedRecords.push({
-                    "Certificate No": document.getElementById('out-cert').innerText,
-                    "Name": document.getElementById('inp-name').value.toUpperCase(),
-                    "Equip Name": document.getElementById('inp-equip').value.toUpperCase(),
-                    "Contractor / Company": document.getElementById('inp-company').value.toUpperCase(),
-                    "DL No": document.getElementById('inp-dl').value.toUpperCase(),
-                    "Aadhar No": document.getElementById('inp-aadhar').value,
-                    "Mobile No": document.getElementById('inp-mobile').value,
-                    "Issue Date": document.getElementById('out-issue').innerText,
-                    "Due Date": document.getElementById('out-due').innerText
+            // Execute PDF Generation safely
+            try {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    savedRecords.push({
+                        "Certificate No": document.getElementById('out-cert').innerText,
+                        "Name": document.getElementById('inp-name').value.toUpperCase(),
+                        "Equip Name": document.getElementById('inp-equip').value.toUpperCase(),
+                        "Contractor / Company": document.getElementById('inp-company').value.toUpperCase(),
+                        "DL No": document.getElementById('inp-dl').value.toUpperCase(),
+                        "Aadhar No": document.getElementById('inp-aadhar').value,
+                        "Mobile No": document.getElementById('inp-mobile').value,
+                        "Issue Date": document.getElementById('out-issue').innerText,
+                        "Due Date": document.getElementById('out-due').innerText
+                    });
+                    
+                    document.getElementById('record-count').innerText = savedRecords.length;
+                    
+                    competencyCounter++;
+                    document.getElementById('inp-series').value = competencyCounter;
+                    localStorage.setItem('competency_counter', competencyCounter);
+                    saveSeriesToCloud(competencyCounter); 
+                    
+                    updatePreview();
+                    
+                    // Reset Button
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }).catch(err => {
+                    alert("Error generating PDF. Please try again.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
                 });
-                
-                document.getElementById('record-count').innerText = savedRecords.length;
-                
-                // Increase counter and push straight to the Cloud Database
-                competencyCounter++;
-                document.getElementById('inp-series').value = competencyCounter;
-                saveSeriesToCloud(competencyCounter); 
-                
-                updatePreview();
-                alert(`PDF Generated successfully for ${name}! Data saved for Excel export.`);
-            });
+            } catch (error) {
+                alert("PDF engine failed to load. Please refresh the page.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
 
         function exportExcel() {
-            if (savedRecords.length === 0) return alert("No records to export! Please generate at least one PDF first.");
-            const worksheet = XLSX.utils.json_to_sheet(savedRecords);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Authorized Letters");
-            const dateStr = new Date().toISOString().split('T')[0];
-            XLSX.writeFile(workbook, `Auth_Letters_Export_${dateStr}.xlsx`);
+            try {
+                if (savedRecords.length === 0) return alert("No records to export! Please generate at least one PDF first.");
+                const worksheet = XLSX.utils.json_to_sheet(savedRecords);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Authorized Letters");
+                const dateStr = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(workbook, `Auth_Letters_Export_${dateStr}.xlsx`);
+            } catch (e) {
+                alert("Excel engine failed to load. Please refresh the page.");
+            }
         }
 
-        // Fetch the cloud number immediately when the page opens
-        window.onload = () => {
+        // Initialize immediately without waiting for slow connections
+        document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('inp-issue-date').valueAsDate = new Date();
+            document.getElementById('inp-series').value = competencyCounter;
             updatePreview();
-            fetchLatestSeriesNumber(); 
-        };
+            
+            // Try to fetch cloud number in the background
+            setTimeout(() => {
+                fetchLatestSeriesNumber();
+            }, 500);
+        });
+
     </script>
 </body>
 </html>
