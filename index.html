@@ -87,173 +87,291 @@
         }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="bg-slate-100 font-sans">
 
-    <!-- LEFT SIDE: INPUT FORM -->
-    <div class="w-1/3 bg-white p-6 shadow-lg flex flex-col h-full overflow-y-auto z-10 border-r border-slate-200">
-        <h2 class="text-2xl font-bold text-slate-800 mb-6">Letter Generator</h2>
+    <!-- ========================================== -->
+    <!-- LOGIN VIEW -->
+    <!-- ========================================== -->
+    <div id="login-view" class="flex h-screen items-center justify-center bg-slate-900 relative overflow-hidden">
+        <!-- Decorative Background -->
+        <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500 via-slate-900 to-slate-900"></div>
         
-        <form id="data-form" class="space-y-4 flex-1" onsubmit="event.preventDefault();">
-            
-            <!-- Auto-Generating Series Control linked to Supabase -->
-            <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mb-2 relative">
-                <div id="sync-status" class="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                    <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-300"></span> <span id="sync-text">Checking Cloud...</span>
+        <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 border border-slate-200">
+            <div class="text-center mb-8">
+                <!-- Replaced Lock Emoji with Logo Image -->
+                <div class="w-20 h-20 mx-auto mb-4 flex items-center justify-center rounded-xl overflow-hidden bg-white shadow-sm border border-slate-100">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxfP8q2DfTAK7i7v1QVceQa6vuMNC8sdn1-dl4HRRVDDMrTcLq97EYhMHo&s=10" alt="J.Kumar Logo" class="w-full h-full object-contain p-2">
                 </div>
-                <label class="block text-xs font-bold text-indigo-800 mb-1 uppercase tracking-wide">Cert. Series Number</label>
-                <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-slate-500">JKIL/MML-07A-CA48/P&M/</span>
-                    <input type="number" id="inp-series" class="w-20 border border-slate-300 rounded-lg p-1.5 font-bold text-center" min="1" oninput="updateSeriesManual()">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Operator Name</label>
-                <input type="text" id="inp-name" class="w-full border border-slate-300 rounded-lg p-2 uppercase" placeholder="KAMLESH KUMAR" oninput="updatePreview()">
+                <h1 class="text-2xl font-extrabold text-slate-900">J.KUMAR</h1>
+                <p class="text-sm text-slate-500 mt-2 font-medium">Authorized Letter Generator Portal</p>
             </div>
             
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Equipment Name</label>
-                <input type="text" id="inp-equip" class="w-full border border-slate-300 rounded-lg p-2 uppercase" placeholder="MOBILE CRANE" oninput="updatePreview()">
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Contractor / Company (M/s)</label>
-                <input type="text" id="inp-company" class="w-full border border-slate-300 rounded-lg p-2 uppercase" placeholder="NAVIN MARRICO" oninput="updatePreview()">
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Driving License (DL) No.</label>
-                <input type="text" id="inp-dl" class="w-full border border-slate-300 rounded-lg p-2 uppercase" placeholder="UP5120110007103" oninput="updatePreview()">
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Aadhar Card No.</label>
-                <input type="text" id="inp-aadhar" class="w-full border border-slate-300 rounded-lg p-2" placeholder="510487769138" oninput="updatePreview()">
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Mobile No.</label>
-                <input type="text" id="inp-mobile" class="w-full border border-slate-300 rounded-lg p-2" placeholder="9876543210" oninput="updatePreview()">
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Issue Date</label>
-                <input type="date" id="inp-issue-date" class="w-full border border-slate-300 rounded-lg p-2" onchange="updatePreview()">
-            </div>
-        </form>
-
-        <div class="mt-6 space-y-3 pt-6 border-t border-slate-200">
-            <button id="pdf-btn" onclick="generatePDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors">
-                1. Generate & Save PDF
-            </button>
-            <button onclick="exportExcel()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2">
-                2. Export All to Excel (<span id="record-count">0</span>)
-            </button>
-            <p class="text-xs text-slate-500 text-center mt-2">Generate PDFs first, then export all saved data to Excel.</p>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Username</label>
+                    <input type="text" id="login-username" class="w-full border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 rounded-xl p-3.5 outline-none transition-all font-medium" placeholder="Enter username..." required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Password</label>
+                    <input type="password" id="login-password" class="w-full border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 rounded-xl p-3.5 outline-none transition-all font-medium" placeholder="Enter password..." required>
+                    <p id="login-error" class="text-red-500 text-xs font-bold mt-2 hidden">Invalid username or password.</p>
+                </div>
+                
+                <button type="submit" class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-4 px-4 rounded-xl shadow-lg hover:shadow-blue-500/30 transition-all duration-300 mt-2">
+                    Secure Login
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- RIGHT SIDE: LIVE PREVIEW -->
-    <div class="w-2/3 bg-slate-100 p-8 overflow-y-auto flex justify-center items-start">
+
+    <!-- ========================================== -->
+    <!-- MAIN APP VIEW (Hidden by default) -->
+    <!-- ========================================== -->
+    <div id="app-view" class="hidden h-screen overflow-hidden">
         
-        <!-- A4 Page Container -->
-        <div id="pdf-content" class="a4-page">
-            <div class="print-border">
+        <!-- LEFT SIDE: INPUT FORM -->
+        <div class="w-1/3 bg-white p-6 shadow-lg flex flex-col h-full overflow-y-auto z-10 border-r border-slate-200">
+            
+            <!-- Dynamic Greeting Header -->
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="greeting-text" class="text-2xl font-bold text-slate-800">Letter Generator</h2>
+                <button onclick="handleLogout()" class="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider">Log out</button>
+            </div>
+            
+            <form id="data-form" class="space-y-4 flex-1" onsubmit="event.preventDefault();">
                 
-                <!-- Headers -->
-                <div class="header-title">
-                    <div style="font-size: 24px;">J.KUMAR INFRAPROJECTS LTD.</div>
-                    <div style="font-size: 20px;">MML7A CA48</div>
-                    <div style="margin-top: 5px;">
-                        <span style="font-size: 16px; border-bottom: 1.5px solid #000; padding-bottom: 1px;">AUTHORIZED LETTER</span>
+                <!-- Auto-Generating Series Control linked to Supabase -->
+                <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mb-2 relative">
+                    <div id="sync-status" class="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                        <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-300"></span> <span id="sync-text">Checking Cloud...</span>
                     </div>
+                    <label class="block text-xs font-bold text-indigo-800 mb-1 uppercase tracking-wide">Cert. Series Number</label>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-slate-500">JKIL/MML-07A-CA48/P&M/</span>
+                        <input type="number" id="inp-series" class="w-20 border border-slate-300 rounded-lg p-1.5 font-bold text-center" min="1" oninput="updateSeriesManual()">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Operator Name</label>
+                    <input type="text" id="inp-name" class="w-full border border-slate-300 rounded-lg p-2 uppercase" placeholder="KAMLESH KUMAR" oninput="updatePreview()">
                 </div>
                 
-                <!-- PDF-safe Horizontal Line -->
-                <hr style="border-top: 2px solid #000; margin: 10px 0;">
-
-                <!-- Meta Info -->
-                <div class="info-grid mt-4">
-                    <div>Equip. Name : <span id="out-equip-top">MOBILE CRANE</span></div>
-                    <div>Issue date :- <span id="out-issue">DD/MM/YYYY</span></div>
-                    <div>Certificate No : <span id="out-cert">JKIL/MML-07A-CA48/P&M/---</span></div>
-                    <div>Due Date :- <span id="out-due">DD/MM/YYYY</span></div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Equipment Name</label>
+                    <input type="text" id="inp-equip" class="w-full border border-slate-300 rounded-lg p-2 uppercase" placeholder="MOBILE CRANE" oninput="updatePreview()">
                 </div>
 
-                <!-- Paragraph -->
-                <div class="paragraph-text mt-4">
-                    This certificate confirms that you have been authorized to drive/Operate those vehicles/Equipment listed below. Keep in your pocket so that it can be shown to the authorized personnel when required. Person who is not in possession of a valid certificate must not drive vehicles owned or rented by company. I am familiar with the safe operation and rules/regulations relating to the mobile plant outlined below and will comply
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Contractor / Company (M/s)</label>
+                    <input type="text" id="inp-company" class="w-full border border-slate-300 rounded-lg p-2 uppercase" placeholder="NAVIN MARRICO" oninput="updatePreview()">
                 </div>
 
-                <!-- Personal Details -->
-                <table class="details-table">
-                    <tr>
-                        <td style="width: 150px;">Name</td>
-                        <td>:- <span id="out-name">__________________</span></td>
-                    </tr>
-                    <tr>
-                        <td>DLNO</td>
-                        <td>:- <span id="out-dl">__________________</span></td>
-                    </tr>
-                    <tr>
-                        <td>ADHAR NO</td>
-                        <td>:- <span id="out-aadhar">__________________</span></td>
-                    </tr>
-                    <tr>
-                        <td>MOBILE NO</td>
-                        <td>:- <span id="out-mobile">__________________</span></td>
-                    </tr>
-                    <tr>
-                        <td>EQUIP.NAME/NO.</td>
-                        <td>:- <span id="out-equip-bottom">__________________</span></td>
-                    </tr>
-                </table>
-
-                <!-- Sub Header -->
-                <div style="font-weight: bold; font-size: 15px; margin: 20px 0 15px 0; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 5px 0;">
-                    We allow to <span id="out-name-inline" style="text-transform: uppercase;">_________</span> AS A <span id="out-equip-inline" style="text-transform: capitalize;">_________</span> operator (M/s <span id="out-company">_________</span>)
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Driving License (DL) No.</label>
+                    <input type="text" id="inp-dl" class="w-full border border-slate-300 rounded-lg p-2 uppercase" placeholder="UP5120110007103" oninput="updatePreview()">
                 </div>
 
-                <!-- Checklist -->
-                <ul class="bullet-list">
-                    <li>He has successfully attended the required safety induction and the copy of the certificate is available with SHE Dept</li>
-                    <li>We undertake to enroll the above-mentioned person for necessary safety instruction course as per the requirement</li>
-                    <li>We undertake to enroll the above-mentioned person for necessary training & competent course as per manufactures</li>
-                    <li>He has valid license& sufficient Experience, and copies of his experience certificates are available with P&M Dept.</li>
-                    <li>This certificate of appointment is only valid whilst the appointment person Is employed by the company. However, the appointment may be withdrawn by an authorized company representative at any time.</li>
-                </ul>
-
-                <!-- Signatures -->
-                <div class="pt-10 font-bold">
-                    <div style="margin-bottom: 30px;">
-                        <span style="border-bottom: 1.5px solid #000; padding-bottom: 3px;">Authorized By:-</span>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <div style="margin-bottom: 25px;">SIGNATURE</div>
-                            <div style="margin-bottom: 15px;">__________________</div>
-                            <div>P&M HEAD</div>
-                        </div>
-                        <div>
-                            <div style="margin-bottom: 25px;">SIGNATURE</div>
-                            <div style="margin-bottom: 15px;">Name:- Nandkumar V.</div>
-                            <div>SAFETY HEAD</div>
-                        </div>
-                    </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Aadhar Card No.</label>
+                    <input type="text" id="inp-aadhar" class="w-full border border-slate-300 rounded-lg p-2" placeholder="[Aadhaar Redacted]" oninput="updatePreview()">
                 </div>
 
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Mobile No.</label>
+                    <input type="text" id="inp-mobile" class="w-full border border-slate-300 rounded-lg p-2" placeholder="9876543210" oninput="updatePreview()">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Issue Date</label>
+                    <input type="date" id="inp-issue-date" class="w-full border border-slate-300 rounded-lg p-2" onchange="updatePreview()">
+                </div>
+            </form>
+
+            <div class="mt-6 space-y-3 pt-6 border-t border-slate-200">
+                <button id="pdf-btn" onclick="generatePDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors">
+                    1. Generate & Save PDF
+                </button>
+                <button onclick="exportExcel()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2">
+                    2. Export All to Excel (<span id="record-count">0</span>)
+                </button>
+                <p class="text-xs text-slate-500 text-center mt-2">Generate PDFs first, then export all saved data to Excel.</p>
             </div>
         </div>
-    </div>
+
+        <!-- RIGHT SIDE: LIVE PREVIEW -->
+        <div class="w-2/3 bg-slate-100 p-8 overflow-y-auto flex justify-center items-start">
+            
+            <!-- A4 Page Container -->
+            <div id="pdf-content" class="a4-page">
+                <div class="print-border">
+                    
+                    <!-- Headers -->
+                    <div class="header-title">
+                        <div style="font-size: 24px;">J.KUMAR INFRAPROJECTS LTD.</div>
+                        <div style="font-size: 20px;">MML7A CA48</div>
+                        <div style="margin-top: 5px;">
+                            <span style="font-size: 16px; border-bottom: 1.5px solid #000; padding-bottom: 1px;">AUTHORIZED LETTER</span>
+                        </div>
+                    </div>
+                    
+                    <!-- PDF-safe Horizontal Line -->
+                    <hr style="border-top: 2px solid #000; margin: 10px 0;">
+
+                    <!-- Meta Info -->
+                    <div class="info-grid mt-4">
+                        <div>Equip. Name : <span id="out-equip-top">MOBILE CRANE</span></div>
+                        <div>Issue date :- <span id="out-issue">DD/MM/YYYY</span></div>
+                        <div>Certificate No : <span id="out-cert">JKIL/MML-07A-CA48/P&M/---</span></div>
+                        <div>Due Date :- <span id="out-due">DD/MM/YYYY</span></div>
+                    </div>
+
+                    <!-- Paragraph -->
+                    <div class="paragraph-text mt-4">
+                        This certificate confirms that you have been authorized to drive/Operate those vehicles/Equipment listed below. Keep in your pocket so that it can be shown to the authorized personnel when required. Person who is not in possession of a valid certificate must not drive vehicles owned or rented by company. I am familiar with the safe operation and rules/regulations relating to the mobile plant outlined below and will comply
+                    </div>
+
+                    <!-- Personal Details -->
+                    <table class="details-table">
+                        <tr>
+                            <td style="width: 150px;">Name</td>
+                            <td>:- <span id="out-name">__________________</span></td>
+                        </tr>
+                        <tr>
+                            <td>DLNO</td>
+                            <td>:- <span id="out-dl">__________________</span></td>
+                        </tr>
+                        <tr>
+                            <td>ADHAR NO</td>
+                            <td>:- <span id="out-aadhar">__________________</span></td>
+                        </tr>
+                        <tr>
+                            <td>MOBILE NO</td>
+                            <td>:- <span id="out-mobile">__________________</span></td>
+                        </tr>
+                        <tr>
+                            <td>EQUIP.NAME/NO.</td>
+                            <td>:- <span id="out-equip-bottom">__________________</span></td>
+                        </tr>
+                    </table>
+
+                    <!-- Sub Header -->
+                    <div style="font-weight: bold; font-size: 15px; margin: 20px 0 15px 0; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 5px 0;">
+                        We allow to <span id="out-name-inline" style="text-transform: uppercase;">_________</span> AS A <span id="out-equip-inline" style="text-transform: capitalize;">_________</span> operator (M/s <span id="out-company">_________</span>)
+                    </div>
+
+                    <!-- Checklist -->
+                    <ul class="bullet-list">
+                        <li>He has successfully attended the required safety induction and the copy of the certificate is available with SHE Dept</li>
+                        <li>We undertake to enroll the above-mentioned person for necessary safety instruction course as per the requirement</li>
+                        <li>We undertake to enroll the above-mentioned person for necessary training & competent course as per manufactures</li>
+                        <li>He has valid license& sufficient Experience, and copies of his experience certificates are available with P&M Dept.</li>
+                        <li>This certificate of appointment is only valid whilst the appointment person Is employed by the company. However, the appointment may be withdrawn by an authorized company representative at any time.</li>
+                    </ul>
+
+                    <!-- Signatures -->
+                    <div class="pt-10 font-bold">
+                        <div style="margin-bottom: 30px;">
+                            <span style="border-bottom: 1.5px solid #000; padding-bottom: 3px;">Authorized By:-</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div>
+                                <div style="margin-bottom: 25px;">SIGNATURE</div>
+                                <div style="margin-bottom: 15px;">__________________</div>
+                                <div>P&M HEAD</div>
+                            </div>
+                            <div>
+                                <div style="margin-bottom: 25px;">SIGNATURE</div>
+                                <div style="margin-bottom: 15px;">Name:- Nandkumar V.</div>
+                                <div>SAFETY HEAD</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div> <!-- END APP VIEW -->
 
     <script>
-        // --- SAFE INITIALIZATION ---
+        // ==========================================
+        // LOGIN LOGIC & GREETING
+        // ==========================================
+        
+        function handleLogin(e) {
+            e.preventDefault();
+            const inputUser = document.getElementById('login-username').value.trim();
+            const inputPass = document.getElementById('login-password').value;
+            const errorMsg = document.getElementById('login-error');
+
+            // 1. Define valid credentials for all users
+            const isValidVikas = (inputUser.toLowerCase() === 'vikas' && inputPass === 'Vikas@123');
+            const isValidBhushan = (inputUser.toLowerCase() === 'bhushan' && inputPass === 'Bhushan@123');
+            const isValidJagdish = (inputUser.toLowerCase() === 'jagdish' && inputPass === 'Jagdish@123'); // Added 3rd User
+
+            // 2. Check if ANY of the users are valid
+            if (isValidVikas || isValidBhushan || isValidJagdish) {
+                
+                // 3. Determine which name to show in the greeting
+                let userName = 'Admin';
+                if (isValidVikas) userName = 'Vikas';
+                else if (isValidBhushan) userName = 'Bhushan';
+                else if (isValidJagdish) userName = 'Jagdish';
+                
+                sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.setItem('loggedInUser', userName);
+                showApp();
+            } else {
+                errorMsg.classList.remove('hidden');
+                document.getElementById('login-password').value = "";
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('loggedInUser');
+            location.reload(); 
+        }
+
+        function updateGreeting() {
+            const userName = sessionStorage.getItem('loggedInUser') || 'Admin';
+            const hour = new Date().getHours();
+            let greeting = 'Hello';
+            
+            if (hour < 12) greeting = 'Good Morning';
+            else if (hour < 18) greeting = 'Good Afternoon';
+            else greeting = 'Good Evening';
+
+            document.getElementById('greeting-text').innerText = `${greeting}, ${userName} 👋`;
+        }
+
+        function showApp() {
+            document.getElementById('login-view').classList.add('hidden');
+            const appView = document.getElementById('app-view');
+            appView.classList.remove('hidden');
+            appView.classList.add('flex'); 
+            
+            updateGreeting(); // Set the dynamic time-based greeting
+
+            document.getElementById('inp-issue-date').valueAsDate = new Date();
+            document.getElementById('inp-series').value = competencyCounter;
+            updatePreview();
+            setTimeout(() => { fetchLatestSeriesNumber(); }, 500);
+        }
+
+        if (sessionStorage.getItem('isLoggedIn') === 'true') {
+            showApp();
+        }
+
+        // ==========================================
+        // APP LOGIC (Supabase & PDF Generation)
+        // ==========================================
+        
         let supabaseClient = null;
         let savedRecords = [];
         let competencyCounter = parseInt(localStorage.getItem('competency_counter')) || 1;
 
-        // Try to connect to Supabase, but don't crash if it fails
         try {
             const SUPABASE_URL = 'https://lyeezqunskbluichzljx.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZWV6cXVuc2tibHVpY2h6bGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzY0NTAsImV4cCI6MjEwNjYxMjQ1MH0.1zyQs2R0C6XYOWoQORp8fBeyOPtCrhEl5kuy6jmeWiU'; 
@@ -375,7 +493,6 @@
                 return;
             }
 
-            // Visual Loading State
             const btn = document.getElementById('pdf-btn');
             const originalText = btn.innerText;
             btn.innerText = "⏳ Generating PDF...";
@@ -390,7 +507,6 @@
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Execute PDF Generation safely
             try {
                 html2pdf().set(opt).from(element).save().then(() => {
                     savedRecords.push({
@@ -414,7 +530,6 @@
                     
                     updatePreview();
                     
-                    // Reset Button
                     btn.innerText = originalText;
                     btn.disabled = false;
                 }).catch(err => {
@@ -441,19 +556,6 @@
                 alert("Excel engine failed to load. Please refresh the page.");
             }
         }
-
-        // Initialize immediately without waiting for slow connections
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('inp-issue-date').valueAsDate = new Date();
-            document.getElementById('inp-series').value = competencyCounter;
-            updatePreview();
-            
-            // Try to fetch cloud number in the background
-            setTimeout(() => {
-                fetchLatestSeriesNumber();
-            }, 500);
-        });
-
     </script>
 </body>
 </html>
