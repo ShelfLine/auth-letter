@@ -8,9 +8,10 @@
     <!-- Tailwind CSS for layout -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Libraries for PDF and Excel Export -->
+    <!-- Libraries for PDF, Excel Export, and Supabase -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         body {
@@ -20,7 +21,7 @@
         /* A4 Page Styling for the PDF Preview */
         .a4-page {
             width: 210mm;
-            height: 295mm; /* SAFETY BUFFER: Slightly less than 297mm to prevent a blank 2nd page */
+            height: 295mm;
             max-height: 295mm;
             box-sizing: border-box; 
             background: white;
@@ -44,11 +45,11 @@
         }
         .info-grid {
             display: grid;
-            grid-template-columns: 60% 40%; /* Gives the left column more space */
+            grid-template-columns: 60% 40%;
             gap: 10px;
             margin-bottom: 15px;
             font-weight: bold;
-            white-space: nowrap; /* Forces text to stay on a single line */
+            white-space: nowrap; 
         }
         .paragraph-text {
             font-size: 14px;
@@ -94,9 +95,12 @@
         
         <form id="data-form" class="space-y-4 flex-1">
             
-            <!-- Auto-Generating Series Control -->
-            <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mb-2">
-                <label class="block text-xs font-bold text-indigo-800 mb-1 uppercase tracking-wide">Cert. Series Number (Auto-Increases)</label>
+            <!-- Auto-Generating Series Control linked to Supabase -->
+            <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mb-2 relative">
+                <div id="sync-status" class="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Sync
+                </div>
+                <label class="block text-xs font-bold text-indigo-800 mb-1 uppercase tracking-wide">Cert. Series Number (Auto-Syncs)</label>
                 <div class="flex items-center gap-2">
                     <span class="text-sm font-bold text-slate-500">JKIL/MML-07A-CA48/P&M/</span>
                     <input type="number" id="inp-series" class="w-20 border border-slate-300 rounded-lg p-1.5 font-bold text-center" min="1" onchange="updateSeriesManual()">
@@ -228,7 +232,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <div>
                             <div style="margin-bottom: 25px;">SIGNATURE</div>
-                            <div style="margin-bottom: 15px;">__________________</div>
+                            <div style="margin-bottom: 15px;">________________</div>
                             <div>P&M HEAD</div>
                         </div>
                         <div>
@@ -244,13 +248,45 @@
     </div>
 
     <script>
-        // Array to store generated records for Excel Export
-        let savedRecords = [];
-        
-        // Get the last competency number from browser memory, or start at 1
-        let competencyCounter = parseInt(localStorage.getItem('competency_counter')) || 1;
+        // --- SUPABASE CLOUD SETUP ---
+        const SUPABASE_URL = 'https://lyeezqunskbluichzljx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZWV6cXVuc2tibHVpY2h6bGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzY0NTAsImV4cCI6MjEwNjYxMjQ1MH0.1zyQs2R0C6XYOWoQORp8fBeyOPtCrhEl5kuy6jmeWiU'; 
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Format Date to DD/MM/YYYY
+        let savedRecords = [];
+        let competencyCounter = 1;
+
+        // Fetch the global latest number from the cloud database
+        async function fetchLatestSeriesNumber() {
+            try {
+                const { data, error } = await supabase
+                    .from('series_tracker')
+                    .select('current_number')
+                    .eq('id', 1)
+                    .single();
+                
+                if (data) {
+                    competencyCounter = data.current_number;
+                    document.getElementById('inp-series').value = competencyCounter;
+                    updatePreview();
+                }
+            } catch (error) {
+                console.error("Cloud fetch failed:", error);
+            }
+        }
+
+        // Save the new number to the cloud database
+        async function saveSeriesToCloud(newNumber) {
+            try {
+                await supabase
+                    .from('series_tracker')
+                    .update({ current_number: newNumber })
+                    .eq('id', 1);
+            } catch (error) {
+                console.error("Cloud save failed:", error);
+            }
+        }
+
         function formatDate(dateString) {
             if(!dateString) return "DD/MM/YYYY";
             const d = new Date(dateString);
@@ -260,7 +296,6 @@
             return `${day}/${month}/${year}`;
         }
 
-        // Calculate Due Date (6 months from Issue Date)
         function calculateDueDate(issueDateStr) {
             if(!issueDateStr) return "DD/MM/YYYY";
             const d = new Date(issueDateStr);
@@ -268,16 +303,15 @@
             return formatDate(d);
         }
 
-        // Allow user to manually change the starting series number
         function updateSeriesManual() {
             let newVal = parseInt(document.getElementById('inp-series').value);
             if(isNaN(newVal) || newVal < 1) newVal = 1;
             competencyCounter = newVal;
-            localStorage.setItem('competency_counter', competencyCounter);
+            
+            saveSeriesToCloud(competencyCounter); // Sync manual change to cloud
             updatePreview();
         }
 
-        // Update the Live Preview
         function updatePreview() {
             const name = document.getElementById('inp-name').value.toUpperCase() || "__________________";
             const equip = document.getElementById('inp-equip').value.toUpperCase() || "__________________";
@@ -290,32 +324,24 @@
             const issueDate = formatDate(issueDateRaw);
             const dueDate = calculateDueDate(issueDateRaw);
 
-            // Generate sequential Certificate Number with 3 digits minimum (e.g. 001, 327)
             const formattedCounter = String(competencyCounter).padStart(3, '0');
             const currentCertNo = `JKIL/MML-07A-CA48/P&M/${formattedCounter}`;
 
-            // Bind values to output spans
             document.getElementById('out-name').innerText = name;
             document.getElementById('out-name-inline').innerText = name;
-            
             document.getElementById('out-equip-top').innerText = equip;
             document.getElementById('out-equip-bottom').innerText = equip;
             document.getElementById('out-equip-inline').innerText = equip;
-
             document.getElementById('out-company').innerText = company;
-            
             document.getElementById('out-dl').innerText = dl;
             document.getElementById('out-aadhar').innerText = aadhar;
             document.getElementById('out-mobile').innerText = mobile;
-            
             document.getElementById('out-issue').innerText = issueDate;
             document.getElementById('out-due').innerText = dueDate;
             document.getElementById('out-cert').innerText = currentCertNo;
         }
 
-        // Generate PDF and save data to array
         function generatePDF() {
-            // Validate required fields roughly
             const name = document.getElementById('inp-name').value;
             if(!name) return alert("Please enter at least the Operator Name.");
 
@@ -328,9 +354,7 @@
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Generate PDF
             html2pdf().set(opt).from(element).save().then(() => {
-                // Save data to records array for Excel export after successful PDF generation
                 savedRecords.push({
                     "Certificate No": document.getElementById('out-cert').innerText,
                     "Name": document.getElementById('inp-name').value.toUpperCase(),
@@ -343,41 +367,32 @@
                     "Due Date": document.getElementById('out-due').innerText
                 });
                 
-                // Update Badge Count
                 document.getElementById('record-count').innerText = savedRecords.length;
                 
-                // Auto-Increase the competency number for the next person
+                // Increase counter and push straight to the Cloud Database
                 competencyCounter++;
-                localStorage.setItem('competency_counter', competencyCounter);
                 document.getElementById('inp-series').value = competencyCounter;
+                saveSeriesToCloud(competencyCounter); 
                 
-                updatePreview(); // Refresh preview with new number
-                
+                updatePreview();
                 alert(`PDF Generated successfully for ${name}! Data saved for Excel export.`);
             });
         }
 
-        // Export Array Data to Excel Sheet
         function exportExcel() {
-            if (savedRecords.length === 0) {
-                return alert("No records to export! Please generate at least one PDF first.");
-            }
-
-            // Create a new workbook and add the data
+            if (savedRecords.length === 0) return alert("No records to export! Please generate at least one PDF first.");
             const worksheet = XLSX.utils.json_to_sheet(savedRecords);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Authorized Letters");
-
-            // Generate Excel File
             const dateStr = new Date().toISOString().split('T')[0];
             XLSX.writeFile(workbook, `Auth_Letters_Export_${dateStr}.xlsx`);
         }
 
-        // Initialize empty state
+        // Fetch the cloud number immediately when the page opens
         window.onload = () => {
             document.getElementById('inp-issue-date').valueAsDate = new Date();
-            document.getElementById('inp-series').value = competencyCounter;
             updatePreview();
+            fetchLatestSeriesNumber(); 
         };
     </script>
 </body>
