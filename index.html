@@ -98,11 +98,11 @@
         
         <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 border border-slate-200">
             <div class="text-center mb-8">
-                <!-- Replaced Lock Emoji with Logo Image -->
+                <!-- Company Logo -->
                 <div class="w-20 h-20 mx-auto mb-4 flex items-center justify-center rounded-xl overflow-hidden bg-white shadow-sm border border-slate-100">
                     <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxfP8q2DfTAK7i7v1QVceQa6vuMNC8sdn1-dl4HRRVDDMrTcLq97EYhMHo&s=10" alt="J.Kumar Logo" class="w-full h-full object-contain p-2">
                 </div>
-                <h1 class="text-2xl font-extrabold text-slate-900">J.KUMAR</h1>
+                <h1 class="text-2xl font-extrabold text-slate-900">J.KUMAR </h1>
                 <p class="text-sm text-slate-500 mt-2 font-medium">Authorized Letter Generator Portal</p>
             </div>
             
@@ -296,24 +296,36 @@
 
     <script>
         // ==========================================
-        // LOGIN LOGIC & GREETING
+        // 1. INITIALIZE VARIABLES & SUPABASE
         // ==========================================
-        
+        let supabaseClient = null;
+        let savedRecords = [];
+        let competencyCounter = parseInt(localStorage.getItem('competency_counter')) || 1;
+
+        try {
+            const SUPABASE_URL = 'https://lyeezqunskbluichzljx.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZWV6cXVuc2tibHVpY2h6bGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzY0NTAsImV4cCI6MjEwNjYxMjQ1MH0.1zyQs2R0C6XYOWoQORp8fBeyOPtCrhEl5kuy6jmeWiU'; 
+            if(window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch (e) {
+            console.warn("Cloud skipped. Working offline.");
+        }
+
+        // ==========================================
+        // 2. LOGIN LOGIC & GREETING
+        // ==========================================
         function handleLogin(e) {
             e.preventDefault();
             const inputUser = document.getElementById('login-username').value.trim();
             const inputPass = document.getElementById('login-password').value;
             const errorMsg = document.getElementById('login-error');
 
-            // 1. Define valid credentials for all users
             const isValidVikas = (inputUser.toLowerCase() === 'vikas' && inputPass === 'Vikas@123');
             const isValidBhushan = (inputUser.toLowerCase() === 'bhushan' && inputPass === 'Bhushan@123');
-            const isValidJagdish = (inputUser.toLowerCase() === 'jagdish' && inputPass === 'Jagdish@123'); // Added 3rd User
+            const isValidJagdish = (inputUser.toLowerCase() === 'jagdish' && inputPass === 'Jagdish@123');
 
-            // 2. Check if ANY of the users are valid
             if (isValidVikas || isValidBhushan || isValidJagdish) {
-                
-                // 3. Determine which name to show in the greeting
                 let userName = 'Admin';
                 if (isValidVikas) userName = 'Vikas';
                 else if (isValidBhushan) userName = 'Bhushan';
@@ -352,36 +364,20 @@
             appView.classList.remove('hidden');
             appView.classList.add('flex'); 
             
-            updateGreeting(); // Set the dynamic time-based greeting
+            updateGreeting(); 
 
+            // Initialize app data only after successful login
             document.getElementById('inp-issue-date').valueAsDate = new Date();
             document.getElementById('inp-series').value = competencyCounter;
             updatePreview();
+            
+            // Try to fetch cloud number in the background
             setTimeout(() => { fetchLatestSeriesNumber(); }, 500);
         }
 
-        if (sessionStorage.getItem('isLoggedIn') === 'true') {
-            showApp();
-        }
-
         // ==========================================
-        // APP LOGIC (Supabase & PDF Generation)
+        // 3. APP LOGIC (Supabase, PDF, & Excel)
         // ==========================================
-        
-        let supabaseClient = null;
-        let savedRecords = [];
-        let competencyCounter = parseInt(localStorage.getItem('competency_counter')) || 1;
-
-        try {
-            const SUPABASE_URL = 'https://lyeezqunskbluichzljx.supabase.co';
-            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZWV6cXVuc2tibHVpY2h6bGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzY0NTAsImV4cCI6MjEwNjYxMjQ1MH0.1zyQs2R0C6XYOWoQORp8fBeyOPtCrhEl5kuy6jmeWiU'; 
-            if(window.supabase) {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            }
-        } catch (e) {
-            console.warn("Cloud skipped. Working offline.");
-        }
-
         function setSyncStatus(isOnline) {
             const dot = document.getElementById('sync-dot');
             const text = document.getElementById('sync-text');
@@ -556,6 +552,16 @@
                 alert("Excel engine failed to load. Please refresh the page.");
             }
         }
+
+        // ==========================================
+        // 4. AUTO-LOGIN ON PAGE RELOAD
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+                showApp();
+            }
+        });
+
     </script>
 </body>
 </html>
