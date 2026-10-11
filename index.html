@@ -577,6 +577,9 @@
             placeholder.style.display = 'block';
         }
 
+        // ==========================================
+        // FIXED PDF GENERATION FOR MOBILE
+        // ==========================================
         function generatePDF() {
             const name = document.getElementById('inp-name').value;
             if(!name) {
@@ -590,11 +593,24 @@
             btn.disabled = true;
 
             const element = document.getElementById('pdf-content');
+            
+            // Scroll element container to top-left to avoid mobile clipping
+            element.parentNode.scrollTop = 0;
+            element.parentNode.scrollLeft = 0;
+            window.scrollTo(0, 0);
+
+            // Added windowWidth & scroll parameters to fix the mobile half-page bug
             const opt = {
                 margin:       0,
                 filename:     `Auth_Letter_${name.replace(/ /g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
+                image:        { type: 'jpeg', quality: 0.99 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true,
+                    windowWidth: 850, // Forces desktop width capture
+                    scrollX: 0,
+                    scrollY: 0
+                },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
