@@ -31,6 +31,8 @@
             font-family: 'Times New Roman', Times, serif;
             color: #000;
             overflow: hidden; 
+            /* Ensure it stays absolute size regardless of mobile screen */
+            flex-shrink: 0;
         }
         .print-border {
             border: 2px solid #000;
@@ -45,9 +47,8 @@
         }
         .info-grid {
             display: grid;
-            grid-template-columns: 60% 40%;
-            gap: 10px;
-            margin-bottom: 15px;
+            grid-template-columns: 68% 32%; 
+            gap: 5px;
             font-weight: bold;
             white-space: nowrap; 
         }
@@ -93,12 +94,10 @@
     <!-- LOGIN VIEW -->
     <!-- ========================================== -->
     <div id="login-view" class="flex h-screen items-center justify-center bg-slate-900 relative overflow-hidden">
-        <!-- Decorative Background -->
         <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500 via-slate-900 to-slate-900"></div>
         
-        <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 border border-slate-200">
+        <div class="bg-white p-8 lg:p-10 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 border border-slate-200">
             <div class="text-center mb-8">
-                <!-- Company Logo -->
                 <div class="w-20 h-20 mx-auto mb-4 flex items-center justify-center rounded-xl overflow-hidden bg-white shadow-sm border border-slate-100">
                     <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxfP8q2DfTAK7i7v1QVceQa6vuMNC8sdn1-dl4HRRVDDMrTcLq97EYhMHo&s=10" alt="J.Kumar Logo" class="w-full h-full object-contain p-2">
                 </div>
@@ -124,30 +123,27 @@
         </div>
     </div>
 
-
     <!-- ========================================== -->
-    <!-- MAIN APP VIEW (Hidden by default) -->
+    <!-- MAIN APP VIEW (Responsive Layout Added) -->
     <!-- ========================================== -->
-    <div id="app-view" class="hidden h-screen overflow-hidden">
+    <div id="app-view" class="hidden flex-col lg:flex-row min-h-screen lg:h-screen bg-slate-100">
         
         <!-- LEFT SIDE: INPUT FORM -->
-        <div class="w-1/3 bg-white p-6 shadow-lg flex flex-col h-full overflow-y-auto z-10 border-r border-slate-200">
+        <div class="w-full lg:w-1/3 bg-white p-4 lg:p-6 shadow-lg flex flex-col z-10 border-b lg:border-b-0 lg:border-r border-slate-200 lg:h-full lg:overflow-y-auto">
             
-            <!-- Dynamic Greeting Header -->
             <div class="flex justify-between items-center mb-6">
-                <h2 id="greeting-text" class="text-2xl font-bold text-slate-800">Letter Generator</h2>
+                <h2 id="greeting-text" class="text-xl lg:text-2xl font-bold text-slate-800">Letter Generator</h2>
                 <button onclick="handleLogout()" class="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider">Log out</button>
             </div>
             
             <form id="data-form" class="space-y-4 flex-1" onsubmit="event.preventDefault();">
                 
-                <!-- Auto-Generating Series Control linked to Supabase -->
                 <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mb-2 relative">
                     <div id="sync-status" class="absolute top-2 right-2 flex items-center gap-1 text-[10px] font-bold text-slate-400">
                         <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-300"></span> <span id="sync-text">Checking Cloud...</span>
                     </div>
                     <label class="block text-xs font-bold text-indigo-800 mb-1 uppercase tracking-wide">Cert. Series Number</label>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <span class="text-sm font-bold text-slate-500">JKIL/MML-07A-CA48/P&M/</span>
                         <input type="number" id="inp-series" class="w-20 border border-slate-300 rounded-lg p-1.5 font-bold text-center" min="1" oninput="updateSeriesManual()">
                     </div>
@@ -187,6 +183,31 @@
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Issue Date</label>
                     <input type="date" id="inp-issue-date" class="w-full border border-slate-300 rounded-lg p-2" onchange="updatePreview()">
                 </div>
+
+                <!-- PHOTO OPTIONS (Responsive Buttons) -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Operator Photo (Optional)</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <label class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-center font-bold py-2.5 px-2 rounded-lg cursor-pointer transition-colors text-sm flex items-center justify-center gap-1">
+                            📁 Upload Photo
+                            <input type="file" id="inp-photo" accept="image/*" class="hidden" onchange="loadPhotoFromFile(event)">
+                        </label>
+                        
+                        <button type="button" onclick="openCamera()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-center font-bold py-2.5 px-2 rounded-lg cursor-pointer transition-colors text-sm flex items-center justify-center gap-1">
+                            📷 Open Camera
+                        </button>
+                    </div>
+
+                    <div id="camera-container" class="hidden mt-3 border border-slate-300 rounded-lg p-2 bg-slate-50 relative">
+                        <video id="camera-video" class="w-full rounded-lg bg-black object-cover max-h-60" autoplay playsinline></video>
+                        <canvas id="camera-canvas" class="hidden"></canvas>
+                        <div class="flex gap-2 mt-2">
+                            <button type="button" onclick="capturePhoto()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm">📸 Snap & Use</button>
+                            <button type="button" onclick="closeCamera()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-lg text-sm">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
             </form>
 
             <div class="mt-6 space-y-3 pt-6 border-t border-slate-200">
@@ -200,10 +221,9 @@
             </div>
         </div>
 
-        <!-- RIGHT SIDE: LIVE PREVIEW -->
-        <div class="w-2/3 bg-slate-100 p-8 overflow-y-auto flex justify-center items-start">
+        <!-- RIGHT SIDE: LIVE PREVIEW (Responsive Scroll Added) -->
+        <div class="w-full lg:w-2/3 bg-slate-100 p-4 lg:p-8 flex justify-center lg:items-start items-start overflow-x-auto lg:h-full lg:overflow-y-auto">
             
-            <!-- A4 Page Container -->
             <div id="pdf-content" class="a4-page">
                 <div class="print-border">
                     
@@ -216,15 +236,26 @@
                         </div>
                     </div>
                     
-                    <!-- PDF-safe Horizontal Line -->
                     <hr style="border-top: 2px solid #000; margin: 10px 0;">
 
-                    <!-- Meta Info -->
-                    <div class="info-grid mt-4">
-                        <div>Equip. Name : <span id="out-equip-top">MOBILE CRANE</span></div>
-                        <div>Issue date :- <span id="out-issue">DD/MM/YYYY</span></div>
-                        <div>Certificate No : <span id="out-cert">JKIL/MML-07A-CA48/P&M/---</span></div>
-                        <div>Due Date :- <span id="out-due">DD/MM/YYYY</span></div>
+                    <!-- Meta Info + Right Side Image container -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 15px; margin-bottom: 15px;">
+                        
+                        <!-- Left side details -->
+                        <div class="info-grid" style="width: 80%;">
+                            <div>Equip. Name : <span id="out-equip-top">MOBILE CRANE</span></div>
+                            <div>Issue date :- <span id="out-issue">DD/MM/YYYY</span></div>
+                            <div>Certificate No : <span id="out-cert">JKIL/MML-07A-CA48/P&M/---</span></div>
+                            <div>Due Date :- <span id="out-due">DD/MM/YYYY</span></div>
+                        </div>
+                        
+                        <!-- Right side photo -->
+                        <div style="width: 20%; display: flex; justify-content: flex-end;">
+                            <div style="width: 25mm; height: 35mm; border: 1.5px solid #000; display: flex; justify-content: center; align-items: center; background-color: #f8f9fa;">
+                                <img id="out-photo" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;" alt="Operator Photo">
+                                <span id="photo-placeholder" style="font-size: 10px; color: #777; text-align: center;">Affix<br>Photo</span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Paragraph -->
@@ -295,16 +326,14 @@
     </div> <!-- END APP VIEW -->
 
     <script>
-        // ==========================================
-        // 1. INITIALIZE VARIABLES & SUPABASE
-        // ==========================================
         let supabaseClient = null;
         let savedRecords = [];
         let competencyCounter = parseInt(localStorage.getItem('competency_counter')) || 1;
+        let cameraStream = null; 
 
         try {
             const SUPABASE_URL = 'https://lyeezqunskbluichzljx.supabase.co';
-            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZWV6cXVuc2tibHVpY2h6bGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzY0NTAsImV4cCI6MjEwNjYxMjQ1MH0.1zyQs2R0C6XYOWoQORp8fBeyOPtCrhEl5kuy6jmeWiU'; 
+            const SUPABASE_KEY = 'YOUR_KEY_HERE'; 
             if(window.supabase) {
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             }
@@ -312,9 +341,6 @@
             console.warn("Cloud skipped. Working offline.");
         }
 
-        // ==========================================
-        // 2. LOGIN LOGIC & GREETING
-        // ==========================================
         function handleLogin(e) {
             e.preventDefault();
             const inputUser = document.getElementById('login-username').value.trim();
@@ -362,22 +388,17 @@
             document.getElementById('login-view').classList.add('hidden');
             const appView = document.getElementById('app-view');
             appView.classList.remove('hidden');
-            appView.classList.add('flex'); 
+            appView.classList.add('flex'); // Add flex back safely since it uses responsive flow directions
             
             updateGreeting(); 
 
-            // Initialize app data only after successful login
             document.getElementById('inp-issue-date').valueAsDate = new Date();
             document.getElementById('inp-series').value = competencyCounter;
             updatePreview();
             
-            // Try to fetch cloud number in the background
             setTimeout(() => { fetchLatestSeriesNumber(); }, 500);
         }
 
-        // ==========================================
-        // 3. APP LOGIC (Supabase, PDF, & Excel)
-        // ==========================================
         function setSyncStatus(isOnline) {
             const dot = document.getElementById('sync-dot');
             const text = document.getElementById('sync-text');
@@ -482,6 +503,80 @@
             }
         }
 
+        function loadPhotoFromFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    setPhotoPreview(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                clearPhotoPreview();
+            }
+        }
+
+        async function openCamera() {
+            const cameraContainer = document.getElementById('camera-container');
+            const video = document.getElementById('camera-video');
+            
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                video.srcObject = cameraStream;
+                cameraContainer.classList.remove('hidden');
+            } catch (err) {
+                console.error("Camera access error:", err);
+                alert("Could not access the camera. Please ensure permissions are granted in your browser.");
+            }
+        }
+
+        function closeCamera() {
+            const cameraContainer = document.getElementById('camera-container');
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            cameraContainer.classList.add('hidden');
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            
+            if (!cameraStream) return;
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const dataUrl = canvas.toDataURL('image/png');
+            
+            setPhotoPreview(dataUrl);
+            closeCamera();
+        }
+
+        function setPhotoPreview(src) {
+            const photoEl = document.getElementById('out-photo');
+            const placeholder = document.getElementById('photo-placeholder');
+            photoEl.src = src;
+            photoEl.style.display = 'block';
+            placeholder.style.display = 'none';
+        }
+
+        function clearPhotoPreview() {
+            const photoEl = document.getElementById('out-photo');
+            const placeholder = document.getElementById('photo-placeholder');
+            document.getElementById('inp-photo').value = ""; 
+            photoEl.src = "";
+            photoEl.style.display = 'none';
+            placeholder.style.display = 'block';
+        }
+
         function generatePDF() {
             const name = document.getElementById('inp-name').value;
             if(!name) {
@@ -525,6 +620,7 @@
                     saveSeriesToCloud(competencyCounter); 
                     
                     updatePreview();
+                    clearPhotoPreview(); 
                     
                     btn.innerText = originalText;
                     btn.disabled = false;
@@ -542,20 +638,79 @@
 
         function exportExcel() {
             try {
-                if (savedRecords.length === 0) return alert("No records to export! Please generate at least one PDF first.");
-                const worksheet = XLSX.utils.json_to_sheet(savedRecords);
+                if (savedRecords.length === 0) {
+                    return alert("No records to export! Please generate at least one PDF first.");
+                }
+
                 const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Authorized Letters");
+
+                savedRecords.forEach((record, index) => {
+                    const wsData = [
+                        ["J.KUMAR INFRAPROJECTS LTD."],
+                        ["MML7A CA48"],
+                        ["AUTHORIZED LETTER"],
+                        [], 
+                        ["Equip. Name : " + record["Equip Name"], "", "Issue date :- " + record["Issue Date"]],
+                        ["Certificate No : " + record["Certificate No"], "", "Due Date :- " + record["Due Date"]],
+                        [],
+                        ["This certificate confirms that you have been authorized to drive/Operate those vehicles/Equipment listed below. Keep in your pocket so that it can be shown to the authorized personnel when required. Person who is not in possession of a valid certificate must not drive vehicles owned or rented by company. I am familiar with the safe operation and rules/regulations relating to the mobile plant outlined below and will comply"],
+                        [],
+                        ["Name", ":- " + record["Name"]],
+                        ["DLNO", ":- " + record["DL No"]],
+                        ["ADHAR NO", ":- " + record["Aadhar No"]],
+                        ["MOBILE NO", ":- " + record["Mobile No"]],
+                        ["EQUIP.NAME/NO.", ":- " + record["Equip Name"]],
+                        [],
+                        [`We allow to ${record["Name"]} AS A ${record["Equip Name"]} operator (M/s ${record["Contractor / Company"]})`],
+                        [],
+                        ["□ He has successfully attended the required safety induction and the copy of the certificate is available with SHE Dept"],
+                        ["□ We undertake to enroll the above-mentioned person for necessary safety instruction course as per the requirement"],
+                        ["□ We undertake to enroll the above-mentioned person for necessary training & competent course as per manufactures"],
+                        ["□ He has valid license & sufficient Experience, and copies of his experience certificates are available with P&M Dept."],
+                        ["□ This certificate of appointment is only valid whilst the appointment person Is employed by the company. However, the appointment may be withdrawn by an authorized company representative at any time."],
+                        [],
+                        ["Authorized By:-"],
+                        [],
+                        ["SIGNATURE", "", "SIGNATURE"],
+                        [],
+                        ["__________________", "", "Name:- Nandkumar V."],
+                        ["P&M HEAD", "", "SAFETY HEAD"]
+                    ];
+
+                    const worksheet = XLSX.utils.aoa_to_sheet(wsData);
+
+                    worksheet['!merges'] = [
+                        { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, 
+                        { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, 
+                        { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } }, 
+                        { s: { r: 7, c: 0 }, e: { r: 7, c: 4 } }, 
+                        { s: { r: 15, c: 0 }, e: { r: 15, c: 4 } },
+                        { s: { r: 17, c: 0 }, e: { r: 17, c: 4 } }, 
+                        { s: { r: 18, c: 0 }, e: { r: 18, c: 4 } }, 
+                        { s: { r: 19, c: 0 }, e: { r: 19, c: 4 } }, 
+                        { s: { r: 20, c: 0 }, e: { r: 20, c: 4 } }, 
+                        { s: { r: 21, c: 0 }, e: { r: 21, c: 4 } }  
+                    ];
+
+                    worksheet['!cols'] = [
+                        { wch: 30 }, 
+                        { wch: 25 }, 
+                        { wch: 25 }  
+                    ];
+
+                    let sheetName = (record["Name"].split(" ")[0] + "_" + (index + 1)).substring(0, 31);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+                });
+
                 const dateStr = new Date().toISOString().split('T')[0];
                 XLSX.writeFile(workbook, `Auth_Letters_Export_${dateStr}.xlsx`);
+                
             } catch (e) {
+                console.error(e);
                 alert("Excel engine failed to load. Please refresh the page.");
             }
         }
 
-        // ==========================================
-        // 4. AUTO-LOGIN ON PAGE RELOAD
-        // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
             if (sessionStorage.getItem('isLoggedIn') === 'true') {
                 showApp();
